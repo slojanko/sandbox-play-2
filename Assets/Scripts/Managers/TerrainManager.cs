@@ -2,13 +2,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TerrainManager : ManagerBase<TerrainManager>
-{
-	[SerializeField]
-	private List<TerrainGeneratorData> data;
-
-	public TerrainGeneratorData GetTerrainGeneratorData(string name)
+namespace Sandbox { 
+	public class TerrainManager : ManagerBase<TerrainManager>
 	{
-		return data[0];
+		[SerializeField]
+		private List<TerrainGeneratorData> data;
+
+		public TerrainGeneratorData GetTerrainGeneratorData(string name)
+		{
+			return data[0];
+		}
 	}
 }

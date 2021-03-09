@@ -6,23 +6,25 @@ using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-public class SettingsManager : ManagerBase<SettingsManager>
-{
-	public GraphicsDeviceType[] availableGraphicsAPI;
-	public GraphicsDeviceType selectedAPI;
-	public Resolution[] availableResolutions;
-
-	protected override void Awake()
+namespace Sandbox { 
+	public class SettingsManager : ManagerBase<SettingsManager>
 	{
-		base.Awake();
+		public GraphicsDeviceType[] availableGraphicsAPI;
+		public GraphicsDeviceType selectedAPI;
+		public Resolution[] availableResolutions;
 
-#if UNITY_EDITOR
-		availableGraphicsAPI = PlayerSettings.GetGraphicsAPIs(EditorUserBuildSettings.activeBuildTarget);
-#endif
-		selectedAPI = SystemInfo.graphicsDeviceType;
-		availableResolutions = Screen.resolutions;
+		protected override void Awake()
+		{
+			base.Awake();
 
-		Application.targetFrameRate = 9999;
-		SceneManager.LoadScene("GameScene");
+	#if UNITY_EDITOR
+			availableGraphicsAPI = PlayerSettings.GetGraphicsAPIs(EditorUserBuildSettings.activeBuildTarget);
+	#endif
+			selectedAPI = SystemInfo.graphicsDeviceType;
+			availableResolutions = Screen.resolutions;
+
+			Application.targetFrameRate = 9999;
+			SceneManager.LoadScene("GameScene");
+		}
 	}
 }
