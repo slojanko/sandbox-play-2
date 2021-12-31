@@ -6,39 +6,89 @@ using Noise;
 namespace Sandbox { 
 	public class TerrainGenerator : MonoBehaviour
 	{
-		private TerrainGeneratorData data;
-		public Chunk chunk;
+		private TerrainProperies properties;
+		private Texture2D heightmap;
+		private Dictionary<(int, int, int), ChunkData> chunkData;
+		private Vector3Int chunkCount;
+
+		private Color32[] heightmapColor;
 
 		void Start()
 		{
-			data = TerrainManager.Instance.GetTerrainGeneratorData("base");
-			CreateChunk();
-			PopulateChunk();
-			BuildChunk();
+			properties = TerrainManager.Instance.GetTerrainProperties("base");
+			heightmap = TerrainManager.Instance.GetHeightmap("base");
+			CreateChunkData();
+			//PopulateChunk();
+			//BuildChunk();
 		}
 
-		void CreateChunk()
+		void CreateChunkData()
 		{
-			if (chunk == null)
-			{
-				chunk = new Chunk(new Vector3(0, 0, 0), data.chunkResolution);
-			}
-		}
+			heightmapColor = heightmap.GetPixels32();
 
-		void PopulateChunk()
-		{
-			for (int x = 0; x < data.chunkResolution; x++)
+			Vector2Int dimensions = new Vector2Int(heightmap.width, heightmap.height);
+			chunkCount = new Vector3Int(
+				Mathf.CeilToInt(dimensions.x / properties.textureSampleArea),
+				Mathf.CeilToInt(dimensions.y / properties.textureSampleArea),
+				Mathf.CeilToInt(256 / properties.textureSampleArea)
+			);
+
+			for (var x = 0; x < chunkCount.x; x++)
 			{
-				for (int y = 0; y < data.chunkResolution; y++)
+				for (var y = 0; y < chunkCount.y; y++)
 				{
-					for (int z = 0; z < data.chunkResolution; z++)
+					for (var z = 0; z < chunkCount.z; z++)
 					{
-						Vector3 sampleAt = (chunk.index + new Vector3(x, y, z) / data.chunkResolution);
-						chunk.terrain[x, y, z] = Perlin.Noise(sampleAt);
+						ChunkData chunk = new ChunkData(properties.chunkResolution); 
+						chunkData[(x, y, z)] = chunk;
+
+						GameObject chunkController = Instantiate(TerrainManager.Instance.chunkPrefab);
+						chunkController.transform.position = new Vector3(x, y, z) * properties.chunkSize;
+						chunkController.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f) * properties.chunkSize;
+						chunkController.GetComponent<ChunkController>().Init(chunk);
+
+						PopulateChunkData(chunk, (x, y, z));
 					}
 				}
 			}
 		}
+
+		void PopulateChunkData(ChunkData chunk, (int, int, int) index)
+		{
+			for (int x = 0; x <= properties.chunkResolution; x++)
+			{
+				for (int y = 0; y <= properties.chunkResolution; y++)
+				{
+					float u = (index.Item1 + x / properties.chunkResolution) * (float)properties.textureSampleArea;
+					float v = (index.Item2 + y / properties.chunkResolution) * (float)properties.textureSampleArea;
+					float height = heightmap.GetPixelBilinear(u, v).r;
+
+					for (int z = 0; z <= properties.chunkResolution; z++)
+					{
+						float zz = (index.Item3 + z / properties.chunkResolution) * (float)properties.textureSampleArea;
+						float filled = zz < height ? 1.0f : 0.0f;
+						chunk.SetTerrainValue(x, y, z, filled);
+					}
+				}
+			}
+
+			chunk.DispactChanges();
+		}
+
+		void PopulateChunk(int x, int y, int z)
+		{
+            //for (int x = 0; x < properties.chunkResolution; x++)
+            //{
+            //    for (int y = 0; y < properties.chunkResolution; y++)
+            //    {
+            //        for (int z = 0; z < properties.chunkResolution; z++)
+            //        {
+            //            //Vector3 sampleAt = (chunkData.index + new Vector3(x, y, z) / properties.chunkResolution);
+            //            //chunkData.terrain[x, y, z] = Perlin.Noise(sampleAt);
+            //        }
+            //    }
+            //}
+        }
 
 		void BuildChunk()
 		{
@@ -47,17 +97,17 @@ namespace Sandbox {
 			List<int> meshIndices = new List<int>();
 
 			Vector3[] vertlist = new Vector3[12];
-			for (int x = 0; x < data.chunkResolution - 1; x++)
+			for (int x = 0; x < properties.chunkResolution - 1; x++)
 			{
-				for (int y = 0; y < data.chunkResolution - 1; y++)
+				for (int y = 0; y < properties.chunkResolution - 1; y++)
 				{
-					for (int z = 0; z < data.chunkResolution - 1; z++)
+					for (int z = 0; z < properties.chunkResolution - 1; z++)
 					{
 						// Go through each cube inside the terrain (=xyz) and check each vertex belonging to this cube (=i) and build cubeIndex
 						int cubeIndex = 0;
 						for (int i = 0; i < 8; i++)
 						{
-							if (SampleTerrain(x, y, z, i) > data.terrainThreshold)
+							if (SampleTerrain(x, y, z, i) > properties.terrainThreshold)
 							{
 								cubeIndex |= 1 << i;
 							}
@@ -116,26 +166,27 @@ namespace Sandbox {
 
 		float SampleTerrain(int x, int y, int z, int vertexIndex)
 		{
-			Vector3Int vertex = MarchingCubesLookup.vertPosition[vertexIndex];
-			return chunk.terrain[x + vertex.x, y + vertex.y, z + vertex.z];
+			Vector3Int vertex = MarchingCubesLookup.vertexIndexToLocalOffset[vertexIndex];
+			//return chunkData.terrain[x + vertex.x, y + vertex.y, z + vertex.z];
+			return 0.0f;
 		}
 
 		Vector3 VertexInterp(int x, int y, int z, int vertexIndex1, int vertexIndex2)
 		{
 			float v1 = SampleTerrain(x, y, z, vertexIndex1);
 			float v2 = SampleTerrain(x, y, z, vertexIndex2);
-			Vector3 p1 = MarchingCubesLookup.vertPosition[vertexIndex1];
-			Vector3 p2 = MarchingCubesLookup.vertPosition[vertexIndex2];
+			Vector3 p1 = MarchingCubesLookup.vertexIndexToLocalOffset[vertexIndex1];
+			Vector3 p2 = MarchingCubesLookup.vertexIndexToLocalOffset[vertexIndex2];
 			float mu;
 
-			if (Mathf.Abs(data.terrainThreshold - v1) < 0.00001f)
+			if (Mathf.Abs(properties.terrainThreshold - v1) < 0.00001f)
 				return p1;
-			if (Mathf.Abs(data.terrainThreshold - v2) < 0.00001f)
+			if (Mathf.Abs(properties.terrainThreshold - v2) < 0.00001f)
 				return p2;
 			if (Mathf.Abs(v1 - v2) < 0.00001f)
 				return p1;
 
-			mu = Mathf.InverseLerp(v1, v2, data.terrainThreshold);
+			mu = Mathf.InverseLerp(v1, v2, properties.terrainThreshold);
 			return p1 + mu * (p2 - p1);
 		}
 	}

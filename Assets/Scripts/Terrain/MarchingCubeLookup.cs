@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Sandbox { 
 	public static class MarchingCubesLookup
 	{
-		public static Vector3Int[] vertPosition = {
+		public static Vector3Int[] vertexIndexToLocalOffset = {
 			new Vector3Int(0, 0, 1),
 			new Vector3Int(1, 0, 1),
 			new Vector3Int(1, 0, 0),

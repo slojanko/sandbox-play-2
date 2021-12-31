@@ -152,8 +152,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e26f35a09a487fb4abb841b2d490a7d2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  data:
+  properties:
   - {fileID: 11400000, guid: 2a6541d9d05d8c447b333b917bf64124, type: 2}
+  heightmap:
+  - {fileID: 2800000, guid: ca9a2fe6fe63a784e93d8dca34ab57e0, type: 3}
 --- !u!4 &64662627
 Transform:
   m_ObjectHideFlags: 0

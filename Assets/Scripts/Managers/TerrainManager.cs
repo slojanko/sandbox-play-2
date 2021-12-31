@@ -6,11 +6,20 @@ namespace Sandbox {
 	public class TerrainManager : ManagerBase<TerrainManager>
 	{
 		[SerializeField]
-		private List<TerrainGeneratorData> data;
+		private List<TerrainProperies> properties;
+		[SerializeField]
+		private List<Texture2D> heightmap;
+		[SerializeField]
+		public GameObject chunkPrefab { get; private set; }
 
-		public TerrainGeneratorData GetTerrainGeneratorData(string name)
+		public TerrainProperies GetTerrainProperties(string name)
 		{
-			return data[0];
+			return properties[0];
+		}
+
+		public Texture2D GetHeightmap(string name)
+		{
+			return heightmap[0];
 		}
 	}
 }
